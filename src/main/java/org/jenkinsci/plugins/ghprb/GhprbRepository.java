@@ -61,15 +61,15 @@ public class GhprbRepository implements Saveable{
         this.reponame = reponame;
         this.trigger = trigger;
     }
-    
+
     public void addPullRequests(Map<Integer, GhprbPullRequest> prs) {
         pullRequests.putAll(prs);
     }
-    
+
     public void init() {
         // make the initial check call to populate our data structures
         initGhRepository();
-        
+
         for (Entry<Integer, GhprbPullRequest> next : pullRequests.entrySet()) {
             GhprbPullRequest pull = next.getValue();
             pull.init(trigger.getHelper(), this);
@@ -80,16 +80,16 @@ public class GhprbRepository implements Saveable{
         if (ghRepository != null) {
             return true;
         }
-        
+
         GitHub gitHub = null;
-        
+
         try {
             gitHub = trigger.getGitHub();
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Error while accessing rate limit API", ex);
             return false;
         }
-        
+
         if (gitHub == null) {
             logger.log(Level.SEVERE, "No connection returned to GitHub server!");
             return false;
@@ -107,7 +107,7 @@ public class GhprbRepository implements Saveable{
             logger.log(Level.SEVERE, "Error while accessing rate limit API", ex);
             return false;
         }
-        
+
 
         try {
             ghRepository = gitHub.getRepository(reponame);
@@ -119,16 +119,16 @@ public class GhprbRepository implements Saveable{
     }
 
     public void check() {
-        
+
         if (!trigger.isActive()) {
             logger.log(Level.FINE, "Project is not active, not checking github state");
             return;
         }
-        
+
         if (!initGhRepository()) {
             return;
         }
-        
+
         GHRepository repo = getGitHubRepo();
 
         List<GHPullRequest> openPulls;
@@ -138,8 +138,8 @@ public class GhprbRepository implements Saveable{
             logger.log(Level.SEVERE, "Could not retrieve open pull requests.", ex);
             return;
         }
-        
-        
+
+
         Set<Integer> closedPulls = new HashSet<Integer>(pullRequests.keySet());
 
         for (GHPullRequest pr : openPulls) {
@@ -154,7 +154,7 @@ public class GhprbRepository implements Saveable{
             check(pr, true);
             closedPulls.remove(pr.getNumber());
         }
-        
+
 
         // remove closed pulls so we don't check them again
         for (Integer id : closedPulls) {
@@ -316,7 +316,7 @@ public class GhprbRepository implements Saveable{
     public GhprbPullRequest getPullRequest(int id) {
         return pullRequests.get(id);
     }
-    
+
     public GHPullRequest getActualPullRequest(int id) throws IOException {
         return getGitHubRepo().getPullRequest(id);
     }
@@ -329,7 +329,7 @@ public class GhprbRepository implements Saveable{
         int number = issueComment.getIssue().getNumber();
         logger.log(Level.FINER, "Comment on issue #{0} from {1}: {2}",
                 new Object[] { number, issueComment.getComment().getUser(), issueComment.getComment().getBody() });
-        
+
         if (!"created".equals(issueComment.getAction())) {
             return;
         }
@@ -342,7 +342,7 @@ public class GhprbRepository implements Saveable{
            logger.log(Level.SEVERE, "Unable to save repository!", e);
         }
     }
-    
+
     private GhprbPullRequest getPullRequest(GHPullRequest ghpr, Boolean isNew, Integer number) throws IOException {
         if (number == null) {
             number = ghpr.getNumber();
@@ -357,7 +357,7 @@ public class GhprbRepository implements Saveable{
                 pr = new GhprbPullRequest(ghpr, trigger.getHelper(), this, isNew);
                 pullRequests.put(number, pr);
             }
-            
+
             return pr;
         }
     }
@@ -379,7 +379,7 @@ public class GhprbRepository implements Saveable{
             logger.log(Level.WARNING, "Unknown Pull Request hook action: {0}", action);
         }
     }
-    
+
     public GHRepository getGitHubRepo() {
         if (ghRepository == null) {
             initGhRepository();

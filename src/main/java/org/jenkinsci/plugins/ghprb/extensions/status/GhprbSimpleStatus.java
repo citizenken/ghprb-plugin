@@ -7,16 +7,17 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
-
+import com.google.gson.Gson;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.ghprb.Ghprb;
 import org.jenkinsci.plugins.ghprb.GhprbCause;
 import org.jenkinsci.plugins.ghprb.GhprbTrigger;
+import org.jenkinsci.plugins.ghprb.GhprbRepository;
 import org.jenkinsci.plugins.ghprb.extensions.GhprbCommitStatus;
 import org.jenkinsci.plugins.ghprb.extensions.GhprbCommitStatusException;
 import org.jenkinsci.plugins.ghprb.extensions.GhprbExtension;
@@ -30,33 +31,40 @@ import org.jenkinsci.plugins.ghprb.manager.factory.GhprbBuildManagerFactoryUtil;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.apache.http.NoHttpResponseException;
+import org.apache.http.client.fluent.Request;
+import org.apache.http.client.fluent.Response;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.entity.ContentType;
+import org.bouncycastle.cert.ocsp.Req;
 
 public class GhprbSimpleStatus extends GhprbExtension implements GhprbCommitStatus, GhprbGlobalExtension, GhprbProjectExtension {
 
     @Extension
     public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
 
+    private static final transient Logger logger = Logger.getLogger(GhprbRepository.class.getName());
     private final String commitStatusContext;
     private final String triggeredStatus;
     private final String startedStatus;
     private final String statusUrl;
     private final List<GhprbBuildResultMessage> completedStatus;
-    
-    
+
+
     public GhprbSimpleStatus() {
         this(null, null, null, null, new ArrayList<GhprbBuildResultMessage>(0));
     }
-    
+
     public GhprbSimpleStatus(String commitStatusContext) {
         this(commitStatusContext, null, null, null, new ArrayList<GhprbBuildResultMessage>(0));
     }
 
     @DataBoundConstructor
     public GhprbSimpleStatus(
-            String commitStatusContext, 
-            String statusUrl, 
-            String triggeredStatus, 
-            String startedStatus, 
+            String commitStatusContext,
+            String statusUrl,
+            String triggeredStatus,
+            String startedStatus,
             List<GhprbBuildResultMessage> completedStatus) {
         this.statusUrl = statusUrl;
         this.commitStatusContext = commitStatusContext == null ? "" : commitStatusContext;
@@ -85,7 +93,7 @@ public class GhprbSimpleStatus extends GhprbExtension implements GhprbCommitStat
         return completedStatus == null ? new ArrayList<GhprbBuildResultMessage>(0) : completedStatus;
     }
 
-public void onBuildTriggered(AbstractProject<?, ?> project, String commitSha, boolean isMergeable, int prId, GHRepository ghRepository) throws GhprbCommitStatusException {
+    public void onBuildTriggered(AbstractProject<?, ?> project, String commitSha, boolean isMergeable, int prId, GHRepository ghRepository) throws GhprbCommitStatusException {
         StringBuilder sb = new StringBuilder();
         GHCommitState state = GHCommitState.PENDING;
         String triggeredStatus = getDescriptor().getTriggeredStatusDefault(this);
@@ -151,7 +159,7 @@ public void onBuildTriggered(AbstractProject<?, ?> project, String commitSha, bo
 
     public void onBuildComplete(AbstractBuild<?, ?> build, TaskListener listener, GHRepository repo) throws GhprbCommitStatusException {
         List<GhprbBuildResultMessage> completedStatus = getDescriptor().getCompletedStatusDefault(this);
-        
+
         GHCommitState state = Ghprb.getState(build);
 
         StringBuilder sb = new StringBuilder();
@@ -184,7 +192,7 @@ public void onBuildTriggered(AbstractProject<?, ?> project, String commitSha, bo
     private void createCommitStatus(AbstractBuild<?, ?> build, TaskListener listener, String message, GHRepository repo, GHCommitState state) throws GhprbCommitStatusException {
 
         Map<String, String> envVars = Ghprb.getEnvVars(build, listener);
-        
+
         String sha1 = envVars.get("ghprbActualCommit");
         Integer pullId = Integer.parseInt(envVars.get("ghprbPullId"));
 
@@ -195,13 +203,13 @@ public void onBuildTriggered(AbstractProject<?, ?> project, String commitSha, bo
         if (StringUtils.isEmpty(url)) {
             url = Jenkins.getInstance().getRootUrl() + build.getUrl();
         }
-        
+
         if (StringUtils.equals(statusUrl, "--none--")) {
             url = "";
         } else if (!StringUtils.isEmpty(statusUrl)) {
             url = Ghprb.replaceMacros(build,  listener, statusUrl);
         }
-        
+
         String context = Util.fixEmpty(commitStatusContext);
         context = Ghprb.replaceMacros(build, listener, context);
 
@@ -210,9 +218,46 @@ public void onBuildTriggered(AbstractProject<?, ?> project, String commitSha, bo
             listener.getLogger().println(String.format("Using context: " + context));
         }
         try {
-            repo.createCommitStatus(sha1, state, url, message, context);
+            postCommitStatus(sha1, state, url, message, context, repo);
         } catch (IOException e) {
             throw new GhprbCommitStatusException(e, state, message, pullId);
+        }
+    }
+
+    private void postCommitStatus(String sha1, GHCommitState state, String url, String message, String context, GHRepository repo) throws IOException {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("state", state.name().toLowerCase(Locale.ENGLISH));
+        map.put("target_url", url);
+        map.put("description", message);
+
+        if (context != null && !context.isEmpty()) {
+            map.put("context", context);
+        }
+
+        Gson gson = new Gson();
+        String body = gson.toJson(map);
+
+        String baseUrl = "https://api.github.com/repos/%s/statuses/%s";
+
+        for (int i = 0; i < 3; i++) {
+            try {
+                Response response = Request.Post(String.format(baseUrl, repo.getName(), sha1))
+                        .addHeader("Authorization", "token " + GhprbTrigger.getDscp().getStatusAccessToken())
+                        .addHeader("Connection", "close")
+                        .bodyString(body, ContentType.APPLICATION_JSON)
+                        .execute();
+                logger.log(Level.INFO, response.returnContent().asString());
+                response.discardContent();
+                break;
+            } catch (NoHttpResponseException e) {
+                logger.log(Level.INFO, "Retrying...");
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                    logger.log(Level.INFO, "Sleep interrupted");
+                }
+            }
         }
     }
 
