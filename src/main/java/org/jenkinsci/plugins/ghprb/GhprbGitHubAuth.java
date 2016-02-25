@@ -62,7 +62,6 @@ public class GhprbGitHubAuth extends AbstractDescribableImpl<GhprbGitHubAuth> {
     private final String id;
     private final String description;
     private final String secret;
-    private final String statusAccessToken;
 
     private transient GitHub gh;
 
@@ -73,13 +72,11 @@ public class GhprbGitHubAuth extends AbstractDescribableImpl<GhprbGitHubAuth> {
             String credentialsId,
             String description,
             String id,
-            String secret,
-            String statusAccessToken
+            String secret
             ) {
         if (StringUtils.isEmpty(serverAPIUrl)) {
             serverAPIUrl = "https://api.github.com";
         }
-        this.statusAccessToken = fixEmptyAndTrim(statusAccessToken);
         this.serverAPIUrl = fixEmptyAndTrim(serverAPIUrl);
         this.jenkinsUrl = fixEmptyAndTrim(jenkinsUrl);
         this.credentialsId = fixEmpty(credentialsId);
@@ -121,11 +118,6 @@ public class GhprbGitHubAuth extends AbstractDescribableImpl<GhprbGitHubAuth> {
     @Exported
     public String getSecret() {
         return secret;
-    }
-
-    @Exported
-    public String getStatusAccessToken() {
-        return statusAccessToken;
     }
 
 

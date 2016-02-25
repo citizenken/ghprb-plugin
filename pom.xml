@@ -8,8 +8,8 @@
         <version>1.532</version>
     </parent>
 
-    <artifactId>ghprb</artifactId>
-    <name>GitHub Pull Request Builder</name>
+    <artifactId>kghprb</artifactId>
+    <name>Kens GitHub Pull Request Builder</name>
     <version>1.30.4-SNAPSHOT</version>
     <packaging>hpi</packaging>
 

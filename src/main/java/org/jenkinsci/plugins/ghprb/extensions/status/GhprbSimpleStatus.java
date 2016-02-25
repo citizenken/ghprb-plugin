@@ -241,12 +241,12 @@ public class GhprbSimpleStatus extends GhprbExtension implements GhprbCommitStat
 
         for (int i = 0; i < 3; i++) {
             try {
-                Response response = Request.Post(String.format(baseUrl, repo.getName(), sha1))
+                Response response = Request.Post(String.format(baseUrl, repo.getFullName(), sha1))
                         .addHeader("Authorization", "token " + GhprbTrigger.getDscp().getStatusAccessToken())
                         .addHeader("Connection", "close")
                         .bodyString(body, ContentType.APPLICATION_JSON)
                         .execute();
-                logger.log(Level.INFO, response.returnContent().asString());
+
                 response.discardContent();
                 break;
             } catch (NoHttpResponseException e) {

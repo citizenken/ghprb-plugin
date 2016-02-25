@@ -40,10 +40,10 @@ public class GhprbBuilds {
     }
 
     public void build(GhprbPullRequest pr, GHUser triggerSender, String commentBody) {
-        
+
         URL url = null;
         GHUser prAuthor = null;
-        
+
         try {
             url = pr.getUrl();
             prAuthor = pr.getPullRequestAuthor();
@@ -51,19 +51,19 @@ public class GhprbBuilds {
             logger.log(Level.SEVERE, "Unable to get PR author or PR URL", e);
         }
 
-        GhprbCause cause = new GhprbCause(pr.getHead(), 
-                pr.getId(), 
-                pr.isMergeable(), 
-                pr.getTarget(), 
-                pr.getSource(), 
-                pr.getAuthorEmail(), 
-                pr.getTitle(), 
-                url, 
-                triggerSender, 
+        GhprbCause cause = new GhprbCause(pr.getHead(),
+                pr.getId(),
+                pr.isMergeable(),
+                pr.getTarget(),
+                pr.getSource(),
+                pr.getAuthorEmail(),
+                pr.getTitle(),
+                url,
+                triggerSender,
                 commentBody,
-                pr.getCommitAuthor(), 
-                prAuthor, 
-                pr.getDescription(), 
+                pr.getCommitAuthor(),
+                prAuthor,
+                pr.getDescription(),
                 pr.getAuthorRepoGitUrl());
 
         for (GhprbExtension ext : Ghprb.getJobExtensions(trigger, GhprbCommitStatus.class)) {
@@ -80,7 +80,7 @@ public class GhprbBuilds {
             logger.log(Level.SEVERE, "Job did not start");
         }
     }
-    
+
     public void onStarted(AbstractBuild<?, ?> build, TaskListener listener) {
         PrintStream logger = listener.getLogger();
         GhprbCause c = Ghprb.getCause(build);

@@ -545,7 +545,7 @@ public class GhprbRepositoryTest {
         String actualSignature = createSHA1Signature(actualSecret, body);
         String fakeSignature = createSHA1Signature("abc", body);
 
-        GhprbGitHubAuth ghAuth = Mockito.spy(new GhprbGitHubAuth("", "", "", "", "", actualSecret, ""));
+        GhprbGitHubAuth ghAuth = Mockito.spy(new GhprbGitHubAuth("", "", "", "", "", actualSecret));
         doReturn(true).when(trigger).isActive();
 
         doReturn(ghAuth).when(trigger).getGitHubApiAuth();
