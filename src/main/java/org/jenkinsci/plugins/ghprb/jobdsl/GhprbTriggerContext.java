@@ -14,6 +14,7 @@ class GhprbTriggerContext implements Context {
     List<GhprbBranch> whiteListTargetBranches = new ArrayList<GhprbBranch>();
     String cron = "H/5 * * * *";
     String triggerPhrase;
+    String statusAccessToken;
     boolean onlyTriggerPhrase;
     boolean useGitHubHooks;
     boolean permitAll;

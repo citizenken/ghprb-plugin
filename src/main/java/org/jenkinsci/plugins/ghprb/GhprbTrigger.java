@@ -141,6 +141,7 @@ public class GhprbTrigger extends GhprbTriggerBackwardsCompatible {
         this.orgslist = orgslist;
         this.cron = cron;
         this.triggerPhrase = triggerPhrase;
+        this.statusAccessToken = statusAccessToken;
         this.onlyTriggerPhrase = onlyTriggerPhrase;
         this.useGitHubHooks = useGitHubHooks;
         this.permitAll = permitAll;
@@ -663,6 +664,7 @@ public class GhprbTrigger extends GhprbTriggerBackwardsCompatible {
         }
 
         private String adminlist;
+        private String statusAccessToken;
 
         private String requestForTestingPhrase;
 
@@ -718,6 +720,7 @@ public class GhprbTrigger extends GhprbTriggerBackwardsCompatible {
             whitelistPhrase = formData.getString("whitelistPhrase");
             okToTestPhrase = formData.getString("okToTestPhrase");
             retestPhrase = formData.getString("retestPhrase");
+            statusAccessToken = formData.getString("statusAccessToken");
             skipBuildPhrase = formData.getString("skipBuildPhrase");
             cron = formData.getString("cron");
             useComments = formData.getBoolean("useComments");

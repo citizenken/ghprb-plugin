@@ -10,13 +10,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
 
+import com.google.gson.Gson;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.ghprb.Ghprb;
 import org.jenkinsci.plugins.ghprb.GhprbCause;
 import org.jenkinsci.plugins.ghprb.GhprbTrigger;
+import org.jenkinsci.plugins.ghprb.GhprbRepository;
 import org.jenkinsci.plugins.ghprb.extensions.GhprbCommitStatus;
 import org.jenkinsci.plugins.ghprb.extensions.GhprbCommitStatusException;
 import org.jenkinsci.plugins.ghprb.extensions.GhprbExtension;
@@ -30,12 +36,19 @@ import org.jenkinsci.plugins.ghprb.manager.factory.GhprbBuildManagerFactoryUtil;
 import org.kohsuke.github.GHCommitState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.apache.http.NoHttpResponseException;
+import org.apache.http.client.fluent.Request;
+import org.apache.http.client.fluent.Response;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.entity.ContentType;
+import org.bouncycastle.cert.ocsp.Req;
 
 public class GhprbSimpleStatus extends GhprbExtension implements GhprbCommitStatus, GhprbGlobalExtension, GhprbProjectExtension {
 
     @Extension
     public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
 
+    private static final transient Logger logger = Logger.getLogger(GhprbRepository.class.getName());
     private final String commitStatusContext;
     private final String triggeredStatus;
     private final String startedStatus;
@@ -253,7 +266,6 @@ public void onBuildTriggered(AbstractProject<?, ?> project, String commitSha, bo
         }
     }
 
->>>>>>> bf7afc5... final updates
     @Override
     public DescriptorImpl getDescriptor() {
         return DESCRIPTOR;

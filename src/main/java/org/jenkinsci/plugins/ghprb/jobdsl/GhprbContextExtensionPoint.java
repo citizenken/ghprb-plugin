@@ -25,6 +25,7 @@ public class GhprbContextExtensionPoint extends ContextExtensionPoint {
                 Joiner.on("\n").join(context.orgWhitelist),
                 context.cron,
                 context.triggerPhrase,
+                context.statusAccessToken,
                 context.onlyTriggerPhrase,
                 context.useGitHubHooks,
                 context.permitAll,
