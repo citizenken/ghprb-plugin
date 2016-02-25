@@ -11,6 +11,7 @@
     <artifactId>ghprb</artifactId>
     <name>GitHub Pull Request Builder</name>
     <version>1.30.4</version>
+
     <packaging>hpi</packaging>
 
     <url>https://wiki.jenkins-ci.org/display/JENKINS/GitHub+pull+request+builder+plugin</url>
@@ -115,6 +116,16 @@
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>plain-credentials</artifactId>
             <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>fluent-hc</artifactId>
+            <version>4.3.4</version>
         </dependency>
     </dependencies>
 
